@@ -1,1 +1,564 @@
-# Xjsjdkdjsbaospsldndb
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Outil de découpe et assemblage d'image</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: #ff9933;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    #fireCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      opacity: 0.35;
+      filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .container {
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border: 2px solid #ff5500;
+      box-shadow: 0 0 30px #ff3300, 0 0 80px #ff0000 inset;
+      border-radius: 18px;
+      padding: 30px;
+      max-width: 650px;
+      width: 95%;
+      margin: 20px;
+      z-index: 1;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      text-shadow: 0 0 20px #ff4400, 0 0 40px #ff0000;
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+      color: #ff9900;
+    }
+
+    .section {
+      border-top: 2px dashed #ff6600;
+      padding-top: 25px;
+      margin-top: 25px;
+    }
+    .section h2 {
+      font-size: 1.8rem;
+      text-shadow: 0 0 10px #ff3300;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label { font-weight: bold; color: #ffaa00; display: block; margin: 10px 0 5px; }
+    input[type="file"] {
+      background: #1a1a1a;
+      border: 2px solid #ff5500;
+      color: #ffaa00;
+      padding: 10px;
+      border-radius: 8px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(180deg, #ff5500, #cc3300);
+      border: none;
+      color: black;
+      font-weight: bold;
+      font-size: 1.2rem;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 25px #ff2200;
+      transition: 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 8px 0;
+    }
+    button:hover {
+      background: linear-gradient(180deg, #ff7700, #ff2200);
+      box-shadow: 0 0 40px #ff5500;
+      transform: scale(1.05);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    canvas, img {
+      max-width: 100%;
+      border: 2px dashed #ff7700;
+      border-radius: 10px;
+      margin-top: 15px;
+      background: #111;
+    }
+
+    .hidden { display: none; }
+
+    .warning-box {
+      background: #220000;
+      border: 2px solid #ff3333;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      color: #ff8888;
+      font-weight: bold;
+    }
+
+    .note {
+      color: #ff8844;
+      font-style: italic;
+      margin-top: 10px;
+    }
+
+    .error-message {
+      color: #ff4444;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fireCanvas"></canvas>
+
+  <div class="container">
+    <h1>Outil de découpe et assemblage</h1>
+    <p style="text-align:center; color:#ffaa00;">Coupe une image en deux, télécharge la moitié droite, sauvegarde la moitié gauche pour assemblage ultérieur.</p>
+
+    <!-- SECTION DÉCOUPE -->
+    <div class="section" id="cutSection">
+      <h2>🪓 Découpe et sauvegarde</h2>
+      <label for="originalImage">Choisir une image :</label>
+      <input type="file" id="originalImage" accept="image/*">
+
+      <button id="cutAndDownload" disabled>Découper et télécharger la moitié droite</button>
+
+      <canvas id="previewCanvas" class="hidden"></canvas>
+
+      <div id="saveConfirmation" class="hidden">
+        <div class="warning-box">
+          ⚠️ Partie gauche sauvegardée temporairement dans le navigateur.<br>
+          Ne fermez pas cette page / onglet et n'utilisez pas la navigation privée, sinon les données seront perdues.<br>
+          Revenez avec la partie droite modifiée pour l'assembler ci-dessous.
+        </div>
+      </div>
+      <div id="storageError" class="error-message hidden">
+        La sauvegarde de la partie gauche a échoué (image trop volumineuse ou stockage plein). L'assemblage ne sera pas possible. Veuillez réessayer avec une image plus petite.
+      </div>
+    </div>
+
+    <!-- SECTION ASSEMBLAGE -->
+    <div class="section" id="assembleSection">
+      <h2>🧩 Assemblage (après modification de la droite)</h2>
+      <label for="rightPartImage">Charger la partie droite modifiée :</label>
+      <input type="file" id="rightPartImage" accept="image/*">
+
+      <button id="assembleBtn" disabled>Assembler avec la partie gauche sauvegardée</button>
+      <div id="assembleResult" class="hidden">
+        <canvas id="resultCanvas"></canvas>
+        <button id="downloadAssembled">Télécharger l'image complète</button>
+      </div>
+      <p id="assembleError" class="error-message"></p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ---------- ANIMATION DE FOND (flammes) ----------
+      const canvas = document.getElementById('fireCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let animationId = null;
+
+      function resizeFireCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resizeFireCanvas);
+      resizeFireCanvas();
+
+      const particles = [];
+      const PARTICLE_COUNT = 120;
+      function createFireParticle() {
+        return {
+          x: Math.random() * width,
+          y: height + Math.random() * 50,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: -(Math.random() * 1.5 + 0.5),
+          size: Math.random() * 6 + 2,
+          alpha: Math.random() * 0.8 + 0.2,
+          life: 1.0,
+          decay: Math.random() * 0.005 + 0.002
+        };
+      }
+      while (particles.length < PARTICLE_COUNT) particles.push(createFireParticle());
+
+      function animateFire() {
+        ctx.clearRect(0, 0, width, height);
+        const gradient = ctx.createRadialGradient(width/2, height, 50, width/2, height, height*0.8);
+        gradient.addColorStop(0, 'rgba(255,80,0,0.3)');
+        gradient.addColorStop(0.5, 'rgba(200,30,0,0.1)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, height*0.2, width, height);
+
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.decay;
+          if (p.y < 0 || p.life <= 0) {
+            p.x = Math.random() * width;
+            p.y = height + 10;
+            p.life = 1.0;
+            p.vy = -(Math.random() * 1.5 + 0.5);
+          }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          const green = Math.floor(120 + Math.random() * 80);
+          ctx.fillStyle = `rgba(255, ${green}, 0, ${p.alpha * p.life})`;
+          ctx.fill();
+          ctx.shadowColor = '#ff4400';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
+        animationId = requestAnimationFrame(animateFire);
+      }
+
+      // Démarrage de l'animation
+      animateFire();
+
+      // Mise en pause de l'animation quand l'onglet n'est pas visible (économie de ressources)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+        } else {
+          if (!animationId) {
+            animateFire();
+          }
+        }
+      });
+
+      // ---------- CORRECTION DE L'ORIENTATION EXIF ----------
+      function getExifOrientation(file) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const view = new DataView(e.target.result);
+            if (view.getUint16(0, false) !== 0xFFD8) return resolve(1);
+            const length = view.byteLength;
+            let offset = 2;
+            while (offset < length) {
+              if (view.getUint16(offset, false) !== 0xFFE1) {
+                offset += 2 + view.getUint16(offset+2, false);
+                continue;
+              }
+              const exifOffset = offset + 4;
+              if (view.getUint32(exifOffset, false) !== 0x45786966) return resolve(1);
+              const little = view.getUint16(exifOffset+6, false) === 0x4949;
+              const tiffOffset = exifOffset + 10;
+              const ifdOffset = view.getUint32(tiffOffset, little) + tiffOffset;
+              const entries = view.getUint16(ifdOffset, little);
+              for (let i = 0; i < entries; i++) {
+                const entryOffset = ifdOffset + 2 + i * 12;
+                if (view.getUint16(entryOffset, little) === 0x0112) {
+                  const value = view.getUint16(entryOffset + 8, little);
+                  return resolve(value >= 1 && value <= 8 ? value : 1);
+                }
+              }
+              return resolve(1);
+            }
+            return resolve(1);
+          };
+          reader.readAsArrayBuffer(file.slice(0, 128*1024));
+        });
+      }
+
+      function correctImageOrientation(file, img) {
+        return getExifOrientation(file).then(orientation => {
+          if (orientation === 1) return img;
+          const c = document.createElement('canvas');
+          const ctx = c.getContext('2d');
+          let w = img.width, h = img.height;
+          if (orientation >= 5 && orientation <= 8) {
+            c.width = h;
+            c.height = w;
+          } else {
+            c.width = w;
+            c.height = h;
+          }
+          switch (orientation) {
+            case 2: ctx.transform(-1, 0, 0, 1, w, 0); break;
+            case 3: ctx.transform(-1, 0, 0, -1, w, h); break;
+            case 4: ctx.transform(1, 0, 0, -1, 0, h); break;
+            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+            case 6: ctx.transform(0, 1, -1, 0, h, 0); break;
+            case 7: ctx.transform(0, -1, -1, 0, h, w); break;
+            case 8: ctx.transform(0, -1, 1, 0, 0, w); break;
+          }
+          ctx.drawImage(img, 0, 0);
+          return new Promise(res => {
+            const corrected = new Image();
+            corrected.onload = () => res(corrected);
+            corrected.src = c.toDataURL('image/png');
+          });
+        });
+      }
+
+      // ---------- ÉLÉMENTS DU DOM ----------
+      const originalInput = document.getElementById('originalImage');
+      const cutBtn = document.getElementById('cutAndDownload');
+      const previewCanvas = document.getElementById('previewCanvas');
+      const previewCtx = previewCanvas.getContext('2d');
+      const saveConfirmation = document.getElementById('saveConfirmation');
+      const storageError = document.getElementById('storageError');
+
+      const rightPartInput = document.getElementById('rightPartImage');
+      const assembleBtn = document.getElementById('assembleBtn');
+      const assembleResult = document.getElementById('assembleResult');
+      const resultCanvas = document.getElementById('resultCanvas');
+      const downloadAssembledBtn = document.getElementById('downloadAssembled');
+      const assembleError = document.getElementById('assembleError');
+
+      let uploadedImage = null;
+      let originalWidth = 0, originalHeight = 0;
+
+      const STORAGE_KEY = 'image_left_part';
+
+      // Vérification au chargement de la page s'il existe une sauvegarde
+      function checkStoredLeft() {
+        try {
+          const stored = sessionStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            const data = JSON.parse(stored);
+            if (data && data.leftDataUrl && data.width && data.height && data.cutX) {
+              originalWidth = data.width;
+              originalHeight = data.height;
+              assembleBtn.disabled = false;
+              return true;
+            }
+          }
+        } catch(e) {}
+        return false;
+      }
+
+      checkStoredLeft();
+
+      // Activer/désactiver le bouton assembler selon qu'on a un fichier droit sélectionné ET une sauvegarde gauche
+      function updateAssembleButtonState() {
+        const hasRightFile = rightPartInput.files && rightPartInput.files[0];
+        const hasLeftStored = !!sessionStorage.getItem(STORAGE_KEY);
+        assembleBtn.disabled = !(hasRightFile && hasLeftStored);
+      }
+
+      rightPartInput.addEventListener('change', updateAssembleButtonState);
+
+      // ---------- CHARGEMENT DE L'IMAGE ORIGINALE ----------
+      originalInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        cutBtn.disabled = true; // désactiver pendant le traitement
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const tempImg = new Image();
+          tempImg.onload = async function() {
+            try {
+              const corrected = await correctImageOrientation(file, tempImg);
+              uploadedImage = corrected;
+              originalWidth = corrected.width;
+              originalHeight = corrected.height;
+              updatePreview();
+              previewCanvas.classList.remove('hidden');
+              cutBtn.disabled = false;
+              // Supprime l'ancienne sauvegarde
+              sessionStorage.removeItem(STORAGE_KEY);
+              saveConfirmation.classList.add('hidden');
+              storageError.classList.add('hidden');
+              assembleBtn.disabled = true;
+              updateAssembleButtonState();
+            } catch (err) {
+              alert("Erreur lors du traitement de l'image : " + err);
+              cutBtn.disabled = true;
+            }
+          };
+          tempImg.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function updatePreview() {
+        if (!uploadedImage) return;
+        previewCanvas.width = originalWidth;
+        previewCanvas.height = originalHeight;
+        previewCtx.clearRect(0, 0, originalWidth, originalHeight);
+        previewCtx.drawImage(uploadedImage, 0, 0);
+        const cutX = Math.floor(originalWidth / 2);
+        previewCtx.beginPath();
+        previewCtx.moveTo(cutX, 0);
+        previewCtx.lineTo(cutX, originalHeight);
+        previewCtx.strokeStyle = '#ff0000';
+        previewCtx.lineWidth = 3;
+        previewCtx.setLineDash([8, 4]);
+        previewCtx.stroke();
+        previewCtx.setLineDash([]);
+      }
+
+      // ---------- DÉCOUPE, TÉLÉCHARGEMENT DE LA DROITE ET SAUVEGARDE DE LA GAUCHE ----------
+      cutBtn.addEventListener('click', function() {
+        if (!uploadedImage) return;
+        cutBtn.disabled = true; // éviter double clic
+        const cutX = Math.floor(originalWidth / 2);
+
+        // Création de la moitié gauche (data URL)
+        const leftCanvas = document.createElement('canvas');
+        leftCanvas.width = cutX;
+        leftCanvas.height = originalHeight;
+        const leftCtx = leftCanvas.getContext('2d');
+        leftCtx.drawImage(uploadedImage, 0, 0, cutX, originalHeight, 0, 0, cutX, originalHeight);
+        const leftDataUrl = leftCanvas.toDataURL('image/png');
+
+        // Tentative de sauvegarde dans le stockage de session
+        const storageData = {
+          leftDataUrl: leftDataUrl,
+          width: originalWidth,
+          height: originalHeight,
+          cutX: cutX
+        };
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+          storageError.classList.add('hidden');
+          saveConfirmation.classList.remove('hidden');
+          assembleBtn.disabled = false; // prêt pour l'assemblage plus tard
+        } catch (e) {
+          // Quota dépassé ou autre erreur
+          console.error('Erreur de stockage :', e);
+          saveConfirmation.classList.add('hidden');
+          storageError.classList.remove('hidden');
+          assembleBtn.disabled = true;
+          // On laisse la possibilité de retenter plus tard mais l'assemblage ne sera pas possible
+          // On n'empêche pas le téléchargement de la droite
+        }
+
+        // Téléchargement de la moitié droite
+        const rightCanvas = document.createElement('canvas');
+        const sw = originalWidth - cutX;
+        rightCanvas.width = sw;
+        rightCanvas.height = originalHeight;
+        const rightCtx = rightCanvas.getContext('2d');
+        rightCtx.drawImage(uploadedImage, cutX, 0, sw, originalHeight, 0, 0, sw, originalHeight);
+
+        rightCanvas.toBlob(function(blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `half-right-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          cutBtn.disabled = false; // réactiver après téléchargement
+        }, 'image/png');
+      });
+
+      // ---------- ASSEMBLAGE ----------
+      assembleBtn.addEventListener('click', function() {
+        assembleError.textContent = '';
+        const rightFile = rightPartInput.files[0];
+        if (!rightFile) {
+          assembleError.textContent = "Veuillez sélectionner la partie droite modifiée.";
+          return;
+        }
+
+        const stored = sessionStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+          assembleError.textContent = "Aucune partie gauche sauvegardée trouvée. Elle a peut-être été perdue. Re-découpez une image.";
+          return;
+        }
+
+        let storageData;
+        try {
+          storageData = JSON.parse(stored);
+        } catch(e) {
+          assembleError.textContent = "Données sauvegardées corrompues.";
+          return;
+        }
+
+        const { leftDataUrl, width, height, cutX } = storageData;
+        if (!leftDataUrl || !width || !height || !cutX) {
+          assembleError.textContent = "Données sauvegardées incomplètes.";
+          return;
+        }
+
+        // Chargement de la moitié gauche depuis la data URL
+        const leftImg = new Image();
+        leftImg.onload = function() {
+          if (leftImg.width !== cutX || leftImg.height !== height) {
+            assembleError.textContent = "La partie gauche restaurée a des dimensions inattendues.";
+            return;
+          }
+
+          // Utilisation de createObjectURL pour éviter une grosse data URL en mémoire
+          const rightUrl = URL.createObjectURL(rightFile);
+          const rightImg = new Image();
+          rightImg.onload = function() {
+            URL.revokeObjectURL(rightUrl); // libérer l'URL
+
+            if (rightImg.width !== width - cutX || rightImg.height !== height) {
+              assembleError.textContent = `La partie droite doit mesurer ${width - cutX}x${height} pixels. Image reçue : ${rightImg.width}x${rightImg.height}.`;
+              return;
+            }
+
+            // Assemblage final
+            resultCanvas.width = width;
+            resultCanvas.height = height;
+            const ctx = resultCanvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(leftImg, 0, 0, cutX, height);
+            ctx.drawImage(rightImg, cutX, 0, width - cutX, height);
+            assembleResult.classList.remove('hidden');
+          };
+          rightImg.onerror = function() {
+            URL.revokeObjectURL(rightUrl);
+            assembleError.textContent = "Impossible de lire la partie droite.";
+          };
+          rightImg.src = rightUrl;
+        };
+        leftImg.onerror = function() {
+          assembleError.textContent = "Impossible de restaurer la partie gauche depuis la sauvegarde.";
+        };
+        leftImg.src = leftDataUrl;
+      });
+
+      downloadAssembledBtn.addEventListener('click', function() {
+        resultCanvas.toBlob(function(blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `image-assembled-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      });
+
+    })();
+  </script>
+</body>
+</html>
