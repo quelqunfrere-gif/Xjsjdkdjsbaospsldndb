@@ -1,564 +1,313 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Outil de découpe et assemblage de carte d'identité : codé par adouille</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0a0a0a;
-      color: #ff9933;
-      font-family: 'Courier New', monospace;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    #fireCanvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: -1;
-      opacity: 0.35;
-      filter: blur(6px);
-      pointer-events: none;
-    }
-
-    .container {
-      background: rgba(10, 10, 10, 0.85);
-      backdrop-filter: blur(12px);
-      border: 2px solid #ff5500;
-      box-shadow: 0 0 30px #ff3300, 0 0 80px #ff0000 inset;
-      border-radius: 18px;
-      padding: 30px;
-      max-width: 650px;
-      width: 95%;
-      margin: 20px;
-      z-index: 1;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 2.5rem;
-      text-shadow: 0 0 20px #ff4400, 0 0 40px #ff0000;
-      letter-spacing: 3px;
-      margin-bottom: 20px;
-      color: #ff9900;
-    }
-
-    .section {
-      border-top: 2px dashed #ff6600;
-      padding-top: 25px;
-      margin-top: 25px;
-    }
-    .section h2 {
-      font-size: 1.8rem;
-      text-shadow: 0 0 10px #ff3300;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    label { font-weight: bold; color: #ffaa00; display: block; margin: 10px 0 5px; }
-    input[type="file"] {
-      background: #1a1a1a;
-      border: 2px solid #ff5500;
-      color: #ffaa00;
-      padding: 10px;
-      border-radius: 8px;
-      width: 100%;
-      margin-bottom: 10px;
-    }
-
-    button {
-      background: linear-gradient(180deg, #ff5500, #cc3300);
-      border: none;
-      color: black;
-      font-weight: bold;
-      font-size: 1.2rem;
-      padding: 12px 24px;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 0 25px #ff2200;
-      transition: 0.2s;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin: 8px 0;
-    }
-    button:hover {
-      background: linear-gradient(180deg, #ff7700, #ff2200);
-      box-shadow: 0 0 40px #ff5500;
-      transform: scale(1.05);
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    canvas, img {
-      max-width: 100%;
-      border: 2px dashed #ff7700;
-      border-radius: 10px;
-      margin-top: 15px;
-      background: #111;
-    }
-
-    .hidden { display: none; }
-
-    .warning-box {
-      background: #220000;
-      border: 2px solid #ff3333;
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 8px;
-      color: #ff8888;
-      font-weight: bold;
-    }
-
-    .note {
-      color: #ff8844;
-      font-style: italic;
-      margin-top: 10px;
-    }
-
-    .error-message {
-      color: #ff4444;
-      margin: 10px 0;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reprise — retrouver l'élan</title>
+<meta name="description" content="Compteur d'heures, micro-tâches et paliers pour reprendre le travail sans se cramer.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2b4bff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%80%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#e9eee8;--ink:#14231c;--mute:#5b6b62;--card:#f6f8f4;--line:#c6d0c7;--acc:#2b4bff;--ok:#1f8a5b}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1a15;--ink:#e6efe8;--mute:#8fa297;--card:#16251e;--line:#2a3d33;--acc:#7f95ff;--ok:#4fcf93}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 Georgia,"Iowan Old Style",serif}
+main{max-width:720px;margin:0 auto;padding:40px 20px 80px}
+h1{font:700 clamp(40px,9vw,72px)/1 "Trebuchet MS",Verdana,sans-serif;letter-spacing:-.03em;margin:0 0 12px}
+h2{font:700 22px "Trebuchet MS",Verdana,sans-serif;margin:48px 0 14px}
+p{margin:0 0 12px}.lead{color:var(--mute);font-size:19px;max-width:52ch}
+#intro{white-space:pre-line}
+section{margin-top:8px}
+.counter{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-top:32px;padding:24px;background:var(--card);border:2px solid var(--ink);border-radius:6px}
+.big{font:700 clamp(56px,16vw,104px)/1 "Trebuchet MS",Verdana,sans-serif;color:var(--acc);font-variant-numeric:tabular-nums}
+.counter small{color:var(--mute);font-size:16px}
+.bar{height:10px;background:var(--line);border-radius:5px;margin:16px 0 4px;overflow:hidden;width:100%}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;width:100%}
+input[type=number]{width:96px;padding:10px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+button{font:600 15px "Trebuchet MS",Verdana,sans-serif;padding:10px 16px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+button.alt{background:none;color:var(--ink)}
+button.alt.on{background:var(--ink);color:var(--bg)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.slot{margin:12px 0 0;color:var(--mute);font-size:16px}.slot.due{color:var(--ink);font-weight:700}
+.ladder{list-style:none;margin:0;padding:0;border-left:3px solid var(--line);margin-left:8px}
+.ladder li{position:relative;padding:0 0 18px 28px}
+.ladder li:before{content:"";position:absolute;left:-11px;top:6px;width:19px;height:19px;border-radius:50%;background:var(--bg);border:3px solid var(--line)}
+.ladder li.done:before{background:var(--ok);border-color:var(--ok)}
+.ladder label{cursor:pointer;display:block}
+.ladder input{position:absolute;opacity:0}
+.ladder input:focus-visible+b{outline:3px solid var(--acc)}
+.ladder b{font:700 20px "Trebuchet MS",Verdana,sans-serif}
+.ladder span{display:block;color:var(--mute);font-size:15px}
+.ladder li.done b{text-decoration:line-through;color:var(--mute)}
+.rules{display:grid;gap:12px;padding:0;list-style:none;margin:0}
+.rules li{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:4px;padding:14px 16px}
+.rules b{display:block;font:700 18px "Trebuchet MS",Verdana,sans-serif}
+textarea{width:100%;min-height:90px;padding:12px;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:4px;resize:vertical}
+.next{margin:8px 0 16px;padding:22px;border:2px solid var(--acc);border-radius:6px;background:var(--card);font:700 clamp(22px,5vw,30px)/1.25 "Trebuchet MS",Verdana,sans-serif}
+.next.empty{border-style:dashed;color:var(--mute);font-weight:400;font-size:18px}
+input[type=text]{flex:1;min-width:200px;padding:10px;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+.tasks{list-style:none;padding:0;margin:14px 0 0}
+.tasks li{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tasks label{flex:1;display:flex;gap:10px;cursor:pointer}
+.tasks li.done span{text-decoration:line-through;color:var(--mute)}
+.tasks .x{padding:2px 10px;border-color:var(--line)}
+.ritual{counter-reset:s;padding:0;list-style:none}
+.ritual li{counter-increment:s;padding:6px 0 6px 40px;position:relative}
+.ritual li:before{content:counter(s);position:absolute;left:0;top:6px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);font:700 14px/26px "Trebuchet MS",sans-serif;text-align:center}
+dialog{width:calc(100% - 32px);max-width:520px;max-height:90vh;overflow:auto;padding:22px;background:var(--card);color:var(--ink);border:2px solid var(--ink);border-radius:6px}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog h2{margin:0 0 8px}
+dialog .f{display:block;margin:12px 0 4px;font-size:15px;color:var(--mute)}
+dialog textarea{background:var(--bg)}
+dialog input[type=text]{width:100%;background:var(--bg)}
+dialog input[type=number],dialog input[type=time]{width:140px;padding:10px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+.err{font-weight:700;margin:10px 0 0}
+.cn{position:fixed;top:-14px;width:8px;height:12px;z-index:99;pointer-events:none;animation:fall 1.8s ease-in forwards}
+@keyframes fall{to{transform:translate(var(--dx),105vh) rotate(var(--r));opacity:.3}}
+@media (prefers-reduced-motion:reduce){.cn{display:none}}
+</style>
 </head>
 <body>
-  <canvas id="fireCanvas"></canvas>
+<main>
+<h1 id="ttl"></h1>
+<p class="lead" id="intro"></p>
 
-  <div class="container">
-    <h1>Outil de découpe et assemblage</h1>
-    <p style="text-align:center; color:#ffaa00;">Coupe une image en deux, télécharge la moitié droite, sauvegarde la moitié gauche pour assemblage ultérieur.</p>
-
-    <!-- SECTION DÉCOUPE -->
-    <div class="section" id="cutSection">
-      <h2>🪓 Découpe et sauvegarde</h2>
-      <label for="originalImage">Choisir une image :</label>
-      <input type="file" id="originalImage" accept="image/*">
-
-      <button id="cutAndDownload" disabled>Découper et télécharger la moitié droite</button>
-
-      <canvas id="previewCanvas" class="hidden"></canvas>
-
-      <div id="saveConfirmation" class="hidden">
-        <div class="warning-box">
-          ⚠️ Partie gauche sauvegardée temporairement dans le navigateur.<br>
-          Ne fermez pas cette page / onglet et n'utilisez pas la navigation privée, sinon les données seront perdues.<br>
-          Revenez avec la partie droite modifiée pour l'assembler ci-dessous.
-        </div>
-      </div>
-      <div id="storageError" class="error-message hidden">
-        La sauvegarde de la partie gauche a échoué (image trop volumineuse ou stockage plein). L'assemblage ne sera pas possible. Veuillez réessayer avec une image plus petite.
-      </div>
-    </div>
-
-    <!-- SECTION ASSEMBLAGE -->
-    <div class="section" id="assembleSection">
-      <h2>🧩 Assemblage (après modification de la droite)</h2>
-      <label for="rightPartImage">Charger la partie droite modifiée :</label>
-      <input type="file" id="rightPartImage" accept="image/*">
-
-      <button id="assembleBtn" disabled>Assembler avec la partie gauche sauvegardée</button>
-      <div id="assembleResult" class="hidden">
-        <canvas id="resultCanvas"></canvas>
-        <button id="downloadAssembled">Télécharger l'image complète</button>
-      </div>
-      <p id="assembleError" class="error-message"></p>
-    </div>
+<div class="counter" aria-live="polite">
+  <div class="big" id="left">—</div>
+  <small>heures restantes avant le but</small>
+  <div class="bar"><i id="fill"></i></div>
+  <div class="row">
+    <input type="number" id="log" min="0" step="0.25" placeholder="h faites" aria-label="Heures faites aujourd'hui">
+    <button id="add">Ajouter</button>
+    <button class="alt" id="uh">Annuler la dernière saisie</button>
+    <button class="alt" id="setup">Régler le total</button>
   </div>
+</div>
+<div class="row">
+  <button class="alt" id="cfg">Réglages</button>
+  <button class="alt" id="ag" hidden>Ajouter à mon agenda</button>
+</div>
+<p class="slot" id="slot" aria-live="polite"></p>
 
-  <script>
-    (function() {
-      // ---------- ANIMATION DE FOND (flammes) ----------
-      const canvas = document.getElementById('fireCanvas');
-      const ctx = canvas.getContext('2d');
-      let width, height;
-      let animationId = null;
+<h2>Où j'en suis</h2>
+<p>Deux lignes pour la prochaine session : où tu t'es arrêté, et par quoi reprendre. Relis-les avant de commencer.</p>
+<textarea id="nt" aria-label="Où j'en suis" placeholder="Ex : section 2 écrite jusqu'au schéma. Reprendre par la légende."></textarea>
 
-      function resizeFireCanvas() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-      }
-      window.addEventListener('resize', resizeFireCanvas);
-      resizeFireCanvas();
+<h2>Ta prochaine portion</h2>
+<p>Une micro-tâche tient en 25 min maximum, se termine pour de vrai et laisse un résultat visible. Si tu ne peux pas dire « c'est fini quand… », elle est encore trop grosse : coupe-la.</p>
+<div class="next" id="next">Ajoute ta première micro-tâche ci-dessous.</div>
+<div class="row"><input type="text" id="mt" placeholder="Ex : écrire l'intro de la section 2" aria-label="Nouvelle micro-tâche"><button id="mtadd">Ajouter</button></div>
+<ul class="tasks" id="tasks"></ul>
 
-      const particles = [];
-      const PARTICLE_COUNT = 120;
-      function createFireParticle() {
-        return {
-          x: Math.random() * width,
-          y: height + Math.random() * 50,
-          vx: (Math.random() - 0.5) * 0.8,
-          vy: -(Math.random() * 1.5 + 0.5),
-          size: Math.random() * 6 + 2,
-          alpha: Math.random() * 0.8 + 0.2,
-          life: 1.0,
-          decay: Math.random() * 0.005 + 0.002
-        };
-      }
-      while (particles.length < PARTICLE_COUNT) particles.push(createFireParticle());
+<h2>La remontée</h2>
+<p>Tu as déjà tenu <span class="g"></span> par jour, mais ton énergie actuelle est plus basse qu'avant. Chaque palier dure au moins 3 jours et tu ne montes que si tes 3 dernières séances sont à 4 ou 5 d'énergie (voir plus bas). Travaille de préférence le matin.</p>
+<ul class="ladder" id="ladder"></ul>
 
-      function animateFire() {
-        ctx.clearRect(0, 0, width, height);
-        const gradient = ctx.createRadialGradient(width/2, height, 50, width/2, height, height*0.8);
-        gradient.addColorStop(0, 'rgba(255,80,0,0.3)');
-        gradient.addColorStop(0.5, 'rgba(200,30,0,0.1)');
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, height*0.2, width, height);
+<h2>Les règles</h2>
+<ul class="rules">
+<li><b>Jamais 2 jours d'affilée sans rien.</b>Un jour raté est normal. Deux, c'est une nouvelle pause qui s'installe.</li>
+<li><b>Même heure, même endroit, même rituel.</b>Ton cerveau garde ces associations. Réutilise exactement ton ancienne routine.</li>
+<li><b>Règle des 25 minutes.</b>Tu t'engages sur un seul pomodoro. Si tu t'arrêtes après, c'est accepté, mais le plus souvent tu continues.</li>
+<li><b>Arrête-toi avant d'être vide.</b>Le jour où tu as forcé <span class="g"></span>, tu étais cramé après 2h. Pendant la remontée, tu stoppes à la durée du palier, même si ça va bien.</li>
+<li><b>Le matin, pas le soir.</b>Place ton créneau dans la première moitié de la journée. Le soir et la nuit sont fermés.</li>
+</ul>
+<ul class="rules" id="more" style="margin-top:12px" hidden>
+<li><b>Une vraie coupure par jour.</b>Un temps sans écran ni projet, pour que le repos ne se transforme pas en panne totale.</li>
+<li><b>Regarde ce qui reste, pas ce qui est fait.</b>Un compteur qui descend motive plus qu'un compteur qui monte.</li>
+<li><b>Une pression extérieure.</b>Envoie ton avancement à quelqu'un chaque semaine, ou fixe une échéance avec ton client.</li>
+<li><b>Une récompense tous les 25h.</b>Petite, mais prévue d'avance.</li>
+</ul>
+<div class="row"><button class="alt" id="mr" aria-expanded="false" aria-controls="more">Voir les 4 autres règles</button></div>
 
-        particles.forEach(p => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= p.decay;
-          if (p.y < 0 || p.life <= 0) {
-            p.x = Math.random() * width;
-            p.y = height + 10;
-            p.life = 1.0;
-            p.vy = -(Math.random() * 1.5 + 0.5);
-          }
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          const green = Math.floor(120 + Math.random() * 80);
-          ctx.fillStyle = `rgba(255, ${green}, 0, ${p.alpha * p.life})`;
-          ctx.fill();
-          ctx.shadowColor = '#ff4400';
-          ctx.shadowBlur = 15;
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        });
-        animationId = requestAnimationFrame(animateFire);
-      }
+<h2>Au début de chaque session</h2>
+<ol class="ritual">
+<li>Lance ton pomodoro.</li>
+<li>Ouvre ton dossier de travail et cette page.</li>
+<li>Relis ta note « Où j'en suis ».</li>
+<li>Prends la prochaine micro-tâche affichée plus haut.</li>
+<li>Commence, même 5 minutes.</li>
+</ol>
 
-      // Démarrage de l'animation
-      animateFire();
+<h2>Énergie après la séance</h2>
+<p>1 = vidé, 5 = en forme. C'est ça qui décide du palier, pas la date. Une seule note par jour : la dernière remplace la précédente.</p>
+<div class="row" id="en"></div>
+<div class="row"><button class="alt" id="ue">Annuler la dernière saisie</button></div>
+<p id="advice" class="lead" style="margin-top:14px"></p>
 
-      // Mise en pause de l'animation quand l'onglet n'est pas visible (économie de ressources)
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          if (animationId) {
-            cancelAnimationFrame(animationId);
-            animationId = null;
-          }
-        } else {
-          if (!animationId) {
-            animateFire();
-          }
-        }
-      });
+<h2>Tes données</h2>
+<p>Tout est stocké dans ce navigateur, sur cet appareil. Pour passer du PC au téléphone, exporte ici puis importe là-bas.</p>
+<div class="row">
+<button class="alt" id="exp">Copier mes données</button>
+<button class="alt" id="imp">Importer</button>
+<button class="alt" id="rst">Tout effacer</button>
+</div>
+<p id="msg" class="lead" style="margin-top:12px" role="status"></p>
+</main>
 
-      // ---------- CORRECTION DE L'ORIENTATION EXIF ----------
-      function getExifOrientation(file) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const view = new DataView(e.target.result);
-            if (view.getUint16(0, false) !== 0xFFD8) return resolve(1);
-            const length = view.byteLength;
-            let offset = 2;
-            while (offset < length) {
-              if (view.getUint16(offset, false) !== 0xFFE1) {
-                offset += 2 + view.getUint16(offset+2, false);
-                continue;
-              }
-              const exifOffset = offset + 4;
-              if (view.getUint32(exifOffset, false) !== 0x45786966) return resolve(1);
-              const little = view.getUint16(exifOffset+6, false) === 0x4949;
-              const tiffOffset = exifOffset + 10;
-              const ifdOffset = view.getUint32(tiffOffset, little) + tiffOffset;
-              const entries = view.getUint16(ifdOffset, little);
-              for (let i = 0; i < entries; i++) {
-                const entryOffset = ifdOffset + 2 + i * 12;
-                if (view.getUint16(entryOffset, little) === 0x0112) {
-                  const value = view.getUint16(entryOffset + 8, little);
-                  return resolve(value >= 1 && value <= 8 ? value : 1);
-                }
-              }
-              return resolve(1);
-            }
-            return resolve(1);
-          };
-          reader.readAsArrayBuffer(file.slice(0, 128*1024));
-        });
-      }
+<dialog id="dlg" aria-labelledby="dt">
+<form id="df"><h2 id="dt"></h2><div id="db"></div><p class="err" id="de" role="alert"></p>
+<div class="row"><button id="ok">OK</button><button type="button" class="alt" id="cx">Annuler</button></div></form>
+</dialog>
 
-      function correctImageOrientation(file, img) {
-        return getExifOrientation(file).then(orientation => {
-          if (orientation === 1) return img;
-          const c = document.createElement('canvas');
-          const ctx = c.getContext('2d');
-          let w = img.width, h = img.height;
-          if (orientation >= 5 && orientation <= 8) {
-            c.width = h;
-            c.height = w;
-          } else {
-            c.width = w;
-            c.height = h;
-          }
-          switch (orientation) {
-            case 2: ctx.transform(-1, 0, 0, 1, w, 0); break;
-            case 3: ctx.transform(-1, 0, 0, -1, w, h); break;
-            case 4: ctx.transform(1, 0, 0, -1, 0, h); break;
-            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
-            case 6: ctx.transform(0, 1, -1, 0, h, 0); break;
-            case 7: ctx.transform(0, -1, -1, 0, h, w); break;
-            case 8: ctx.transform(0, -1, 1, 0, 0, w); break;
-          }
-          ctx.drawImage(img, 0, 0);
-          return new Promise(res => {
-            const corrected = new Image();
-            corrected.onload = () => res(corrected);
-            corrected.src = c.toDataURL('image/png');
-          });
-        });
-      }
-
-      // ---------- ÉLÉMENTS DU DOM ----------
-      const originalInput = document.getElementById('originalImage');
-      const cutBtn = document.getElementById('cutAndDownload');
-      const previewCanvas = document.getElementById('previewCanvas');
-      const previewCtx = previewCanvas.getContext('2d');
-      const saveConfirmation = document.getElementById('saveConfirmation');
-      const storageError = document.getElementById('storageError');
-
-      const rightPartInput = document.getElementById('rightPartImage');
-      const assembleBtn = document.getElementById('assembleBtn');
-      const assembleResult = document.getElementById('assembleResult');
-      const resultCanvas = document.getElementById('resultCanvas');
-      const downloadAssembledBtn = document.getElementById('downloadAssembled');
-      const assembleError = document.getElementById('assembleError');
-
-      let uploadedImage = null;
-      let originalWidth = 0, originalHeight = 0;
-
-      const STORAGE_KEY = 'image_left_part';
-
-      // Vérification au chargement de la page s'il existe une sauvegarde
-      function checkStoredLeft() {
-        try {
-          const stored = sessionStorage.getItem(STORAGE_KEY);
-          if (stored) {
-            const data = JSON.parse(stored);
-            if (data && data.leftDataUrl && data.width && data.height && data.cutX) {
-              originalWidth = data.width;
-              originalHeight = data.height;
-              assembleBtn.disabled = false;
-              return true;
-            }
-          }
-        } catch(e) {}
-        return false;
-      }
-
-      checkStoredLeft();
-
-      // Activer/désactiver le bouton assembler selon qu'on a un fichier droit sélectionné ET une sauvegarde gauche
-      function updateAssembleButtonState() {
-        const hasRightFile = rightPartInput.files && rightPartInput.files[0];
-        const hasLeftStored = !!sessionStorage.getItem(STORAGE_KEY);
-        assembleBtn.disabled = !(hasRightFile && hasLeftStored);
-      }
-
-      rightPartInput.addEventListener('change', updateAssembleButtonState);
-
-      // ---------- CHARGEMENT DE L'IMAGE ORIGINALE ----------
-      originalInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        cutBtn.disabled = true; // désactiver pendant le traitement
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          const tempImg = new Image();
-          tempImg.onload = async function() {
-            try {
-              const corrected = await correctImageOrientation(file, tempImg);
-              uploadedImage = corrected;
-              originalWidth = corrected.width;
-              originalHeight = corrected.height;
-              updatePreview();
-              previewCanvas.classList.remove('hidden');
-              cutBtn.disabled = false;
-              // Supprime l'ancienne sauvegarde
-              sessionStorage.removeItem(STORAGE_KEY);
-              saveConfirmation.classList.add('hidden');
-              storageError.classList.add('hidden');
-              assembleBtn.disabled = true;
-              updateAssembleButtonState();
-            } catch (err) {
-              alert("Erreur lors du traitement de l'image : " + err);
-              cutBtn.disabled = true;
-            }
-          };
-          tempImg.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-
-      function updatePreview() {
-        if (!uploadedImage) return;
-        previewCanvas.width = originalWidth;
-        previewCanvas.height = originalHeight;
-        previewCtx.clearRect(0, 0, originalWidth, originalHeight);
-        previewCtx.drawImage(uploadedImage, 0, 0);
-        const cutX = Math.floor(originalWidth / 2);
-        previewCtx.beginPath();
-        previewCtx.moveTo(cutX, 0);
-        previewCtx.lineTo(cutX, originalHeight);
-        previewCtx.strokeStyle = '#ff0000';
-        previewCtx.lineWidth = 3;
-        previewCtx.setLineDash([8, 4]);
-        previewCtx.stroke();
-        previewCtx.setLineDash([]);
-      }
-
-      // ---------- DÉCOUPE, TÉLÉCHARGEMENT DE LA DROITE ET SAUVEGARDE DE LA GAUCHE ----------
-      cutBtn.addEventListener('click', function() {
-        if (!uploadedImage) return;
-        cutBtn.disabled = true; // éviter double clic
-        const cutX = Math.floor(originalWidth / 2);
-
-        // Création de la moitié gauche (data URL)
-        const leftCanvas = document.createElement('canvas');
-        leftCanvas.width = cutX;
-        leftCanvas.height = originalHeight;
-        const leftCtx = leftCanvas.getContext('2d');
-        leftCtx.drawImage(uploadedImage, 0, 0, cutX, originalHeight, 0, 0, cutX, originalHeight);
-        const leftDataUrl = leftCanvas.toDataURL('image/png');
-
-        // Tentative de sauvegarde dans le stockage de session
-        const storageData = {
-          leftDataUrl: leftDataUrl,
-          width: originalWidth,
-          height: originalHeight,
-          cutX: cutX
-        };
-        try {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-          storageError.classList.add('hidden');
-          saveConfirmation.classList.remove('hidden');
-          assembleBtn.disabled = false; // prêt pour l'assemblage plus tard
-        } catch (e) {
-          // Quota dépassé ou autre erreur
-          console.error('Erreur de stockage :', e);
-          saveConfirmation.classList.add('hidden');
-          storageError.classList.remove('hidden');
-          assembleBtn.disabled = true;
-          // On laisse la possibilité de retenter plus tard mais l'assemblage ne sera pas possible
-          // On n'empêche pas le téléchargement de la droite
-        }
-
-        // Téléchargement de la moitié droite
-        const rightCanvas = document.createElement('canvas');
-        const sw = originalWidth - cutX;
-        rightCanvas.width = sw;
-        rightCanvas.height = originalHeight;
-        const rightCtx = rightCanvas.getContext('2d');
-        rightCtx.drawImage(uploadedImage, cutX, 0, sw, originalHeight, 0, 0, sw, originalHeight);
-
-        rightCanvas.toBlob(function(blob) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `half-right-${Date.now()}.png`;
-          a.click();
-          URL.revokeObjectURL(url);
-          cutBtn.disabled = false; // réactiver après téléchargement
-        }, 'image/png');
-      });
-
-      // ---------- ASSEMBLAGE ----------
-      assembleBtn.addEventListener('click', function() {
-        assembleError.textContent = '';
-        const rightFile = rightPartInput.files[0];
-        if (!rightFile) {
-          assembleError.textContent = "Veuillez sélectionner la partie droite modifiée.";
-          return;
-        }
-
-        const stored = sessionStorage.getItem(STORAGE_KEY);
-        if (!stored) {
-          assembleError.textContent = "Aucune partie gauche sauvegardée trouvée. Elle a peut-être été perdue. Re-découpez une image.";
-          return;
-        }
-
-        let storageData;
-        try {
-          storageData = JSON.parse(stored);
-        } catch(e) {
-          assembleError.textContent = "Données sauvegardées corrompues.";
-          return;
-        }
-
-        const { leftDataUrl, width, height, cutX } = storageData;
-        if (!leftDataUrl || !width || !height || !cutX) {
-          assembleError.textContent = "Données sauvegardées incomplètes.";
-          return;
-        }
-
-        // Chargement de la moitié gauche depuis la data URL
-        const leftImg = new Image();
-        leftImg.onload = function() {
-          if (leftImg.width !== cutX || leftImg.height !== height) {
-            assembleError.textContent = "La partie gauche restaurée a des dimensions inattendues.";
-            return;
-          }
-
-          // Utilisation de createObjectURL pour éviter une grosse data URL en mémoire
-          const rightUrl = URL.createObjectURL(rightFile);
-          const rightImg = new Image();
-          rightImg.onload = function() {
-            URL.revokeObjectURL(rightUrl); // libérer l'URL
-
-            if (rightImg.width !== width - cutX || rightImg.height !== height) {
-              assembleError.textContent = `La partie droite doit mesurer ${width - cutX}x${height} pixels. Image reçue : ${rightImg.width}x${rightImg.height}.`;
-              return;
-            }
-
-            // Assemblage final
-            resultCanvas.width = width;
-            resultCanvas.height = height;
-            const ctx = resultCanvas.getContext('2d');
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(leftImg, 0, 0, cutX, height);
-            ctx.drawImage(rightImg, cutX, 0, width - cutX, height);
-            assembleResult.classList.remove('hidden');
-          };
-          rightImg.onerror = function() {
-            URL.revokeObjectURL(rightUrl);
-            assembleError.textContent = "Impossible de lire la partie droite.";
-          };
-          rightImg.src = rightUrl;
-        };
-        leftImg.onerror = function() {
-          assembleError.textContent = "Impossible de restaurer la partie gauche depuis la sauvegarde.";
-        };
-        leftImg.src = leftDataUrl;
-      });
-
-      downloadAssembledBtn.addEventListener('click', function() {
-        resultCanvas.toBlob(function(blob) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `image-assembled-${Date.now()}.png`;
-          a.click();
-          URL.revokeObjectURL(url);
-        }, 'image/png');
-      });
-
-    })();
-  </script>
+<script>
+const $=id=>document.getElementById(id);
+const S={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const p2=n=>String(n).padStart(2,'0'),
+ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())},
+today=()=>ago(0),
+fmt=h=>{const m=Math.round(h*60);return m<60?m+' min':Math.floor(m/60)+'h'+(m%60?p2(m%60):'')};
+// Règle de montée unique : 3 jours minimum sur le palier, puis 3 séances à 4 ou plus
+const MIN=3,UP=4,NB=3;
+const DEF={goal:3,time:'',notif:false,title:"Pas de discipline à retrouver. Juste l'élan.",
+intro:"Tu as tenu {rythme} par jour pendant des mois. Ton problème actuel n'est pas la volonté : c'est un projet devenu trop abstrait, et une batterie à plat. On découpe le travail en petites portions finissables et on remonte selon ton énergie, pas selon le calendrier.",
+steps:[['30-45 min par jour','1 ou 2 pomodoros. Volontairement sous ta capacité : le but est de relancer la chaîne.'],
+['1h','Minimum 3 jours.'],['1h30','Minimum 3 jours.'],
+['2h','Le palier où tu t\'es cramé. Même règle que les autres : 3 séances à 4 ou plus avant de monter.'],
+['2h30','Minimum 3 jours.'],['3h par jour','Ton rythme d\'avant, retrouvé.']]};
+// Validation (chargement + import)
+const num=(v,m)=>typeof v==='number'&&isFinite(v)&&v>=m,
+isD=v=>typeof v==='string'&&/^\d{4}-\d\d-\d\d$/.test(v),bad=k=>{throw k};
+const V={
+h:o=>o&&num(o.total,.01)&&num(o.done,0)?{total:o.total,done:o.done}:bad('h'),
+ck:a=>Array.isArray(a)?a.map(Boolean):bad('ck'),
+tk:a=>Array.isArray(a)&&a.every(t=>t&&typeof t.t==='string'&&t.t.trim())?a.map(t=>({t:t.t,d:!!t.d})):bad('tk'),
+en:a=>{if(!Array.isArray(a))bad('en');const m=new Map();
+a.forEach((e,i)=>{if(typeof e==='number')e={d:ago(a.length-i),v:e};
+if(!e||!isD(e.d)||!Number.isInteger(e.v)||e.v<1||e.v>5)bad('en');m.set(e.d,e.v)});
+return[...m].sort((x,y)=>x[0]<y[0]?-1:1).map(([d,v])=>({d,v})).slice(-14)},
+nt:s=>typeof s==='string'?s:bad('nt'),
+ps:s=>s===null||isD(s)?s:bad('ps'),
+cf:o=>{if(!o||typeof o!=='object'||Array.isArray(o))bad('cf');const r={...DEF,...o};
+if(!num(r.goal,.25)||typeof r.title!=='string'||typeof r.intro!=='string'||typeof r.time!=='string'||(r.time&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time))||!Array.isArray(r.steps)||!r.steps.length||r.steps.some(s=>!Array.isArray(s)||typeof s[0]!=='string'||!s[0].trim()||typeof s[1]!=='string'))bad('cf');
+return{goal:r.goal,time:r.time,notif:r.notif===true,title:r.title,intro:r.intro,steps:r.steps.map(s=>[s[0],s[1]])}}
+};
+const L=(k,d)=>{try{return V[k](S.get(k,d))}catch(e){return V[k](d)}};
+let st=L('h',{total:150,done:0}),ck=L('ck',[]),tk=L('tk',[]),en=L('en',[]),nt=L('nt',''),ps=L('ps',null),cf=L('cf',{}),un=[];
+try{un=S.get('un',[]).filter(o=>o&&(o.k==='h'&&num(o.v,0)||o.k==='en'&&isD(o.d)))}catch(e){}
+S.set('en',en);
+// Modale (remplace prompt/confirm)
+const dlg=$('dlg');let cur;
+function ask(t,body,label,fn){$('dt').textContent=t;$('db').innerHTML=body;$('de').textContent='';$('ok').textContent=label;cur=fn;dlg.showModal();
+const f=$('db').querySelector('input,textarea');if(f)f.focus()}
+$('df').onsubmit=e=>{e.preventDefault();const r=cur();if(r)$('de').textContent=r;else dlg.close()};
+$('cx').onclick=()=>dlg.close();
+// Annulation
+const refU=()=>{$('uh').disabled=!un.some(o=>o.k==='h');$('ue').disabled=!un.some(o=>o.k==='en')};
+const push=o=>{un.push(o);un=un.slice(-30);S.set('un',un);refU()};
+function undo(k){const i=un.map(o=>o.k).lastIndexOf(k);if(i<0)return;const o=un.splice(i,1)[0];S.set('un',un);
+if(k==='h'){st.done=Math.max(0,Math.round((st.done-o.v)*100)/100);S.set('h',st);draw()}
+else{en=en.filter(e=>e.d!==o.d);if(o.p)en.push({d:o.d,v:o.p});en.sort((a,b)=>a.d<b.d?-1:1);S.set('en',en);drawE();advise()}
+refU()}
+$('uh').onclick=()=>undo('h');$('ue').onclick=()=>undo('en');
+// Heures
+function draw(){const left=Math.max(0,st.total-st.done);
+$('left').textContent=(Math.round(left*100)/100)+'h';
+$('fill').style.width=Math.min(100,st.done/st.total*100)+'%'}
+$('add').onclick=()=>{const v=parseFloat($('log').value);if(v>0){st.done+=v;S.set('h',st);push({k:'h',v});$('log').value='';draw()}};
+$('setup').onclick=()=>{ask('Régler le total',
+'<label class="f" for="f1">Total d\'heures à faire</label><input type="number" id="f1" min="0.25" step="0.25">'+
+'<label class="f" for="f2">Heures déjà faites</label><input type="number" id="f2" min="0" step="0.25">','Enregistrer',()=>{
+const t=parseFloat($('f1').value),d=parseFloat($('f2').value);
+if(!(t>0)||!(d>=0))return 'Attention : indique un total supérieur à 0 et des heures déjà faites (0 ou plus).';
+st.total=t;st.done=d;S.set('h',st);un=un.filter(o=>o.k!=='h');S.set('un',un);refU();draw()});
+$('f1').value=st.total;$('f2').value=st.done};
+// Confettis
+function confetti(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+const c=['--acc','--ok','--mute'];for(let i=0;i<36;i++){const e=document.createElement('i');e.className='cn';e.setAttribute('aria-hidden','true');
+e.style.cssText='left:'+Math.random()*96+'vw;background:var('+c[i%3]+');--dx:'+Math.round(Math.random()*160-80)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;animation-delay:'+(Math.random()*.4).toFixed(2)+'s';
+document.body.appendChild(e);setTimeout(()=>e.remove(),2400)}}
+// Paliers
+const ul=$('ladder');
+function drawL(){ul.innerHTML='';cf.steps.forEach((s,i)=>{const li=document.createElement('li');
+li.innerHTML='<label><input type="checkbox"><b></b><span></span></label>';
+li.querySelector('b').textContent=s[0];li.querySelector('span').textContent=s[1];
+const c=li.querySelector('input');c.checked=!!ck[i];li.classList.toggle('done',c.checked);
+c.onchange=()=>{ck[i]=c.checked;li.classList.toggle('done',c.checked);S.set('ck',ck);
+if(c.checked){ps=today();S.set('ps',ps);confetti()}advise()};ul.appendChild(li)})}
+// Micro-tâches
+function drawT(){const ul=$('tasks');ul.innerHTML='';
+tk.forEach((t,i)=>{const li=document.createElement('li');li.className=t.d?'done':'';
+li.innerHTML='<label><input type="checkbox"'+(t.d?' checked':'')+'><span></span></label><button class="alt x" aria-label="Supprimer">×</button>';
+li.querySelector('span').textContent=t.t;
+li.querySelector('input').onchange=e=>{t.d=e.target.checked;S.set('tk',tk);drawT()};
+li.querySelector('.x').onclick=()=>{tk.splice(i,1);S.set('tk',tk);drawT()};ul.appendChild(li)});
+const n=tk.find(t=>!t.d);
+$('next').textContent=n?n.t:(tk.length?'Tout est fini. Ajoute la suite.':'Ajoute ta première micro-tâche ci-dessous.');
+$('next').classList.toggle('empty',!n)}
+function addT(){const v=$('mt').value.trim();if(v){tk.push({t:v,d:false});S.set('tk',tk);$('mt').value='';drawT()}}
+$('mtadd').onclick=addT;$('mt').onkeydown=e=>{if(e.key==='Enter')addT()};
+// Note
+$('nt').value=nt;$('nt').oninput=e=>{nt=e.target.value;S.set('nt',nt)};
+// Énergie (une entrée par jour)
+function drawE(){const t=en.find(e=>e.d===today());[...$('en').children].forEach((b,i)=>{const on=!!t&&t.v===i+1;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)})}
+function advise(){const i=cf.steps.findIndex((s,j)=>!ck[j]),n=en.filter(e=>!ps||e.d>ps).length,l=en.slice(-NB);
+const t=i<0?'Tous les paliers sont franchis.':'Palier en cours : '+cf.steps[i][0]+' ('+Math.min(n,MIN)+'/'+MIN+' jours minimum).';let s='';
+if(l.length){const v=l[l.length-1].v;
+s=v<=2?'Énergie basse : reste sur ce palier demain, ou redescends d\'un cran. Ce n\'est pas un échec.'
+:i<0?'':n<MIN?'Encore '+(MIN-n)+' jour'+(MIN-n>1?'s':'')+' minimum sur ce palier avant de monter.'
+:l.length===NB&&l.every(e=>e.v>=UP)?NB+' séances de suite à '+UP+' ou plus : tu peux monter d\'un palier.'
+:'Bien. Reste sur ce palier encore quelques jours.'}
+$('advice').textContent=t+(s?' '+s:'')}
+for(let i=1;i<=5;i++){const b=document.createElement('button');b.className='alt';b.textContent=i;
+b.onclick=()=>{const d=today(),o=en.find(e=>e.d===d);push({k:'en',d,p:o?o.v:null});
+en=en.filter(e=>e.d!==d);en.push({d,v:i});en=en.slice(-14);S.set('en',en);drawE();advise()};$('en').appendChild(b)}
+// Règles repliables
+$('mr').onclick=()=>{const m=$('more'),o=m.hidden;m.hidden=!o;$('mr').setAttribute('aria-expanded',o);$('mr').textContent=o?'Voir moins':'Voir les 4 autres règles'};
+// Créneau habituel : rappel page ouverte + export agenda
+let nf='';
+function tick(){const el=$('slot');let tx='',due=false;
+if(cf.time){const[h,m]=cf.time.split(':').map(Number),x=new Date().getHours()*60+new Date().getMinutes()-h*60-m;due=x>=0&&x<5;
+tx=due?'C\'est l\'heure de ta session : lance ton pomodoro.':'Créneau habituel : '+cf.time.replace(':','h')+(cf.notif?' · notification active tant que cette page reste ouverte':'');
+if(due&&cf.notif&&nf!==today()){nf=today();
+if('Notification' in window&&Notification.permission==='granted')try{new Notification('Reprise',{body:'C\'est l\'heure de ta session. Prochaine portion : '+((tk.find(t=>!t.d)||{}).t||'ajoute une micro-tâche')})}catch(e){}}}
+el.classList.toggle('due',due);if(el.textContent!==tx)el.textContent=tx}
+setInterval(tick,15000);
+$('ag').onclick=()=>{const[h,m]=cf.time.split(':'),n=new Date(),D=n.getFullYear()+p2(n.getMonth()+1)+p2(n.getDate())+'T'+h+m+'00',Z=n.toISOString().replace(/[-:]|\.\d+/g,'');
+const s=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Reprise//FR','BEGIN:VEVENT','UID:reprise-'+Z+'@reprise','DTSTAMP:'+Z,'DTSTART:'+D,'DURATION:PT30M','RRULE:FREQ=DAILY','SUMMARY:Reprise : session de travail','BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Reprise : session de travail','TRIGGER:PT0S','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/calendar'}));a.download='reprise.ics';document.body.appendChild(a);a.click();a.remove()};
+// Réglages
+function drawAll(){$('ttl').textContent=cf.title;$('intro').textContent=cf.intro.replace(/\{rythme\}/g,fmt(cf.goal));
+document.querySelectorAll('.g').forEach(e=>e.textContent=fmt(cf.goal));$('ag').hidden=!cf.time;drawL();advise();tick()}
+function saveCfg(){const g=parseFloat($('c3').value),tm=$('c5').value,
+steps=$('c4').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const k=l.indexOf('|');return k<0?[l,'']:[l.slice(0,k).trim(),l.slice(k+1).trim()]});
+if(!(g>=.25))return 'Attention : indique un rythme cible d\'au moins 0,25 h par jour.';
+if(!steps.length||steps.some(s=>!s[0]))return 'Attention : il faut au moins un palier, et chacun doit avoir un titre.';
+const notif=$('c6').checked&&!!tm;
+cf={goal:g,time:tm,notif,title:$('c1').value.trim()||DEF.title,intro:$('c2').value.trim()||DEF.intro,steps};
+S.set('cf',cf);
+if(notif&&'Notification' in window&&Notification.permission==='default')try{Notification.requestPermission()}catch(e){}
+drawAll()}
+$('cfg').onclick=()=>{ask('Réglages',
+'<label class="f" for="c1">Titre</label><input type="text" id="c1">'+
+'<label class="f" for="c2">Texte d\'intro (vide = texte d\'origine ; {rythme} = ton rythme cible)</label><textarea id="c2" rows="4"></textarea>'+
+'<label class="f" for="c3">Rythme cible (heures par jour)</label><input type="number" id="c3" min="0.25" step="0.25">'+
+'<label class="f" for="c4">Paliers (un par ligne : titre | description)</label><textarea id="c4" rows="7"></textarea>'+
+'<label class="f" for="c5">Heure du créneau habituel (vide = aucun)</label><input type="time" id="c5">'+
+'<label class="f"><input type="checkbox" id="c6"> Me notifier à cette heure (la page doit être ouverte ; pour un rappel page fermée, utilise « Ajouter à mon agenda »)</label>','Enregistrer',saveCfg);
+$('c1').value=cf.title;$('c2').value=cf.intro;$('c3').value=cf.goal;$('c4').value=cf.steps.map(s=>s[0]+' | '+s[1]).join('\n');$('c5').value=cf.time;$('c6').checked=cf.notif};
+// Données
+const KEYS=['h','ck','tk','en','cf','nt','ps'];
+const say=t=>{$('msg').textContent=t};
+function imp(s){let o;try{o=JSON.parse(s)}catch(e){return 'Attention : ce texte n\'est pas un export valide.'}
+if(!o||typeof o!=='object'||Array.isArray(o))return 'Attention : export illisible.';
+const r={};try{KEYS.forEach(k=>{if(o[k]!==null&&o[k]!==undefined)r[k]=V[k](o[k])})}
+catch(k){return 'Attention : le champ « '+(typeof k==='string'?k:'?')+' » est invalide ou incomplet. Rien n\'a été importé.'}
+if(!Object.keys(r).length)return 'Attention : aucune donnée reconnue.';
+Object.keys(r).forEach(k=>S.set(k,r[k]));try{localStorage.removeItem('un')}catch(e){}location.reload()}
+$('exp').onclick=async()=>{const o={};KEYS.forEach(k=>o[k]=S.get(k,null));const s=JSON.stringify(o);
+try{await navigator.clipboard.writeText(s);say('Copié. Colle-le dans « Importer » sur l\'autre appareil.')}
+catch(e){ask('Copie ce texte','<label class="f" for="f1">Sélectionne tout et copie :</label><textarea id="f1" readonly></textarea>','Fermer',()=>{});$('f1').value=s;$('f1').select()}};
+$('imp').onclick=()=>ask('Importer tes données','<label class="f" for="f1">Colle tes données exportées :</label><textarea id="f1"></textarea>','Importer',
+()=>$('f1').value.trim()?imp($('f1').value):'Attention : colle d\'abord tes données.');
+$('rst').onclick=()=>{ask('Tout effacer','<p>Effacer toutes tes données sur cet appareil ? Cette action est définitive.</p>','Tout effacer',
+()=>{[...KEYS,'un'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});location.reload()});$('cx').focus()};
+// Départ
+draw();drawT();drawE();refU();drawAll();
+</script>
 </body>
 </html>
